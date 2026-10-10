@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Виртуальное окружение
+venv/
+env/
+.venv/
+
+# Файлы IDE
+.vscode/
+.idea/
+*.iml
+
+# Файлы ОС
+.DS_Store
+Thumbs.db
+
+# Переменные окружения и чувствительные данные
+.env
+*.env
+
+# Логи и отчёты
+*.log
+*.coverage
+htmlcov/
+.coverage.*
+*.cover
+
+# Другие временные файлы
+*.tmp
+*.bak
+*.swp
+*~
+*.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Файлы, генерируемые при деплое
+*.pid
+*.pid.lock
+
+# Файлы, которые могут создаваться при тестировании
+.pytest_cache/
+.tox/
+.coverage
+
+# Версии файлов (для разных занятий)
+versions/

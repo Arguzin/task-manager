@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Manager - Таблица задач</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f7fb;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .container {
+      max-width: 1100px;
+      width: 100%;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+      padding: 24px;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 8px;
+      color: #1a2634;
+    }
+    .sub {
+      color: #5a6a7a;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+    .api-url {
+      background: #eef2f6;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 14px;
+      display: inline-block;
+      margin-bottom: 20px;
+    }
+
+    /* Форма создания */
+    .form-section {
+      background: #f8faff;
+      border: 1px solid #dce3ed;
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+    .form-section h3 {
+      margin-bottom: 12px;
+      font-size: 18px;
+      color: #1a2634;
+    }
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: flex-end;
+    }
+    .form-group {
+      flex: 1 1 180px;
+      display: flex;
+      flex-direction: column;
+    }
+    .form-group label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #2c3e50;
+      margin-bottom: 4px;
+    }
+    .form-group input {
+      padding: 8px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 14px;
+      background: white;
+    }
+    .btn {
+      background: #1a73e8;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn:hover {
+      background: #1557b0;
+    }
+    .btn-danger {
+      background: #d32f2f;
+    }
+    .btn-danger:hover {
+      background: #b71c1c;
+    }
+    .btn-warning {
+      background: #f57c00;
+    }
+    .btn-warning:hover {
+      background: #e65100;
+    }
+    .btn-success {
+      background: #2e7d32;
+    }
+    .btn-success:hover {
+      background: #1b5e20;
+    }
+
+    /* Таблица */
+    .table-wrapper {
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+    th {
+      background: #e8edf4;
+      color: #1a2634;
+      font-weight: 600;
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 2px solid #cbd5e1;
+    }
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #edf2f7;
+      vertical-align: middle;
+    }
+    tr:hover {
+      background: #f8fafc;
+    }
+    .task-status {
+      display: inline-block;
+      background: #e8f0fe;
+      color: #1a73e8;
+      border-radius: 12px;
+      padding: 2px 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .task-status.done {
+      background: #e6f7e6;
+      color: #2e7d32;
+    }
+    .task-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .task-actions button {
+      padding: 4px 12px;
+      font-size: 12px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .empty-state {
+      text-align: center;
+      color: #7a8a9a;
+      padding: 30px 0;
+    }
+
+    /* Модальное окно */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.3);
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      min-width: 320px;
+      max-width: 500px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    .modal-content h3 {
+      margin-bottom: 16px;
+    }
+    .modal-content .form-group {
+      margin-bottom: 12px;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 16px;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #1a2634;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    .toast.show {
+      opacity: 1;
+    }
+    .toast.error {
+      background: #d32f2f;
+    }
+    .toast.success {
+      background: #2e7d32;
+    }
+
+    /* Мелкие правки */
+    .id-cell {
+      font-family: monospace;
+      font-size: 12px;
+      color: #5a6a7a;
+    }
+    .date-cell {
+      font-size: 12px;
+      color: #5a6a7a;
+    }
+    .controls {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>📋 Task Manager</h1>
+  <div class="sub">Табличное представление задач</div>
+  <div class="api-url">🔗 API: <span id="apiBase">http://127.0.0.1:8000</span></div>
+
+  <!-- Форма создания -->
+  <div class="form-section">
+    <h3>➕ Создать задачу</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label for="newTitle">Название *</label>
+        <input type="text" id="newTitle" placeholder="Введите название" />
+      </div>
+      <div class="form-group">
+        <label for="newDesc">Описание</label>
+        <input type="text" id="newDesc" placeholder="Описание (опционально)" />
+      </div>
+      <button class="btn" id="createBtn">Создать</button>
+    </div>
+  </div>
+
+  <!-- Таблица -->
+  <h3 style="margin-bottom: 12px;">📌 Список задач</h3>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Название</th>
+          <th>Описание</th>
+          <th>Статус</th>
+          <th>Создана</th>
+          <th>Обновлена</th>
+          <th>Действия</th>
+        </tr>
+      </thead>
+      <tbody id="taskTableBody">
+        <tr><td colspan="7" class="empty-state">Загрузка...</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="controls">
+    <button class="btn" id="refreshBtn">🔄 Обновить</button>
+  </div>
+</div>
+
+<!-- Модальное окно для редактирования -->
+<div class="modal" id="editModal">
+  <div class="modal-content">
+    <h3>✏️ Редактировать задачу</h3>
+    <div class="form-group">
+      <label for="editTitle">Название</label>
+      <input type="text" id="editTitle" />
+    </div>
+    <div class="form-group">
+      <label for="editDesc">Описание</label>
+      <input type="text" id="editDesc" />
+    </div>
+    <div class="form-group">
+      <label for="editCompleted">Выполнена?</label>
+      <input type="checkbox" id="editCompleted" style="width: 20px; height: 20px;" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="saveEditBtn">Сохранить</button>
+      <button class="btn btn-danger" id="cancelEditBtn">Отмена</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast уведомления -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // === Конфигурация ===
+  const API_BASE = 'http://127.0.0.1:8000';
+  let editingTaskId = null;
+
+  // === DOM-элементы ===
+  const tableBody = document.getElementById('taskTableBody');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const createBtn = document.getElementById('createBtn');
+  const newTitle = document.getElementById('newTitle');
+  const newDesc = document.getElementById('newDesc');
+
+  const editModal = document.getElementById('editModal');
+  const editTitle = document.getElementById('editTitle');
+  const editDesc = document.getElementById('editDesc');
+  const editCompleted = document.getElementById('editCompleted');
+  const saveEditBtn = document.getElementById('saveEditBtn');
+  const cancelEditBtn = document.getElementById('cancelEditBtn');
+
+  const toastEl = document.getElementById('toast');
+  let toastTimeout = null;
+
+  // === Вспомогательные функции ===
+  function showToast(message, type = 'info') {
+    toastEl.textContent = message;
+    toastEl.className = 'toast show ' + type;
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(() => {
+      toastEl.classList.remove('show');
+    }, 3000);
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr);
+    return d.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  // === API-запросы ===
+  async function apiRequest(endpoint, method = 'GET', body = null) {
+    const url = `${API_BASE}${endpoint}`;
+    const options = {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+    };
+    if (body) options.body = JSON.stringify(body);
+    try {
+      const res = await fetch(url, options);
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Ошибка ${res.status}: ${errText}`);
+      }
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return await res.json();
+      } else {
+        return null;
+      }
+    } catch (err) {
+      showToast(`❌ ${err.message}`, 'error');
+      throw err;
+    }
+  }
+
+  // === Загрузка и отрисовка ===
+  async function loadTasks() {
+    try {
+      const tasks = await apiRequest('/tasks');
+      renderTable(tasks);
+      showToast('✅ Список обновлён', 'success');
+    } catch (err) {
+      tableBody.innerHTML = `<tr><td colspan="7" class="empty-state">❌ Не удалось загрузить задачи. Убедитесь, что сервер запущен (${API_BASE})</td></tr>`;
+    }
+  }
+
+  function renderTable(tasks) {
+    if (!tasks || tasks.length === 0) {
+      tableBody.innerHTML = `<tr><td colspan="7" class="empty-state">📭 Нет задач. Создайте первую!</td></tr>`;
+      return;
+    }
+    let html = '';
+    tasks.forEach(task => {
+      const statusClass = task.is_completed ? 'done' : '';
+      const statusText = task.is_completed ? '✅ Выполнена' : '⏳ В процессе';
+      html += `
+        <tr>
+          <td class="id-cell">${task.id.substring(0, 8)}…</td>
+          <td><strong>${escapeHtml(task.title)}</strong></td>
+          <td>${task.description ? escapeHtml(task.description) : '—'}</td>
+          <td><span class="task-status ${statusClass}">${statusText}</span></td>
+          <td class="date-cell">${formatDate(task.created_at)}</td>
+          <td class="date-cell">${task.updated_at ? formatDate(task.updated_at) : '—'}</td>
+          <td class="task-actions">
+            <button class="btn btn-warning" onclick="openEditModal('${task.id}')">✏️</button>
+            <button class="btn btn-danger" onclick="deleteTask('${task.id}')">🗑️</button>
+          </td>
+        </tr>
+      `;
+    });
+    tableBody.innerHTML = html;
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // === CRUD операции ===
+  async function createTask() {
+    const title = newTitle.value.trim();
+    if (!title) {
+      showToast('⚠️ Введите название задачи', 'error');
+      return;
+    }
+    const description = newDesc.value.trim() || null;
+    try {
+      const newTask = await apiRequest('/tasks', 'POST', { title, description });
+      showToast(`✅ Задача "${newTask.title}" создана`, 'success');
+      newTitle.value = '';
+      newDesc.value = '';
+      loadTasks();
+    } catch (err) {
+      // ошибка уже показана в apiRequest
+    }
+  }
+
+  async function deleteTask(id) {
+    if (!confirm('Удалить задачу?')) return;
+    try {
+      await apiRequest(`/tasks/${id}`, 'DELETE');
+      showToast('🗑️ Задача удалена', 'success');
+      loadTasks();
+    } catch (err) {
+      // ошибка уже показана
+    }
+  }
+
+  async function openEditModal(id) {
+    try {
+      const task = await apiRequest(`/tasks/${id}`);
+      editingTaskId = id;
+      editTitle.value = task.title || '';
+      editDesc.value = task.description || '';
+      editCompleted.checked = !!task.is_completed;
+      editModal.style.display = 'flex';
+    } catch (err) {
+      // ошибка уже показана
+    }
+  }
+
+  async function saveEdit() {
+    if (!editingTaskId) return;
+    const title = editTitle.value.trim();
+    if (!title) {
+      showToast('⚠️ Название не может быть пустым', 'error');
+      return;
+    }
+    const description = editDesc.value.trim() || null;
+    const is_completed = editCompleted.checked;
+    try {
+      const updated = await apiRequest(`/tasks/${editingTaskId}`, 'PUT', {
+        title,
+        description,
+        is_completed,
+      });
+      showToast(`✅ Задача "${updated.title}" обновлена`, 'success');
+      closeEditModal();
+      loadTasks();
+    } catch (err) {
+      // ошибка уже показана
+    }
+  }
+
+  function closeEditModal() {
+    editModal.style.display = 'none';
+    editingTaskId = null;
+    editTitle.value = '';
+    editDesc.value = '';
+    editCompleted.checked = false;
+  }
+
+  // === Обработчики событий ===
+  refreshBtn.addEventListener('click', loadTasks);
+  createBtn.addEventListener('click', createTask);
+  saveEditBtn.addEventListener('click', saveEdit);
+  cancelEditBtn.addEventListener('click', closeEditModal);
+
+  editModal.addEventListener('click', (e) => {
+    if (e.target === editModal) closeEditModal();
+  });
+
+  newTitle.addEventListener('keypress', (e) => { if (e.key === 'Enter') createTask(); });
+  newDesc.addEventListener('keypress', (e) => { if (e.key === 'Enter') createTask(); });
+
+  // Глобально делаем функции доступными для onclick
+  window.openEditModal = openEditModal;
+  window.deleteTask = deleteTask;
+
+  // === Старт ===
+  loadTasks();
+</script>
+</body>
+</html>
